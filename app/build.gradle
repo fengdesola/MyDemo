@@ -1,0 +1,101 @@
+apply plugin: 'com.android.application'
+
+
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.1"
+
+
+    //配置应用的签名信息
+    signingConfigs {
+        release {
+            storeFile file('E:/code/Tank.key')
+            keyAlias 'tank'
+            keyPassword '198739zkl'
+            storePassword '198739zkl'
+        }
+    }
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 25
+        //multiDexEnabled true
+        
+    }
+
+
+    //解决多版本问题
+    productFlavors {
+        demo {
+            applicationId "com.sola.mydemo"
+            versionCode 1
+            versionName "1.0"
+            manifestPlaceholders = [BAIDU_LBS         : "PGqijN7cM19GW8V7CTFvHYGEbfNQVNDK",
+                                    BAIDU_PUSH        : "GTsd5hwHZzRltBRImhqupRGy",
+                                    APP_PACKAGE_NAME  : "com.bsoft.chrodis.pub",
+                                    JPUSH_APPKEY_VALUE: "d95a290ba6357a4b08c504a4"]
+            buildConfigField 'String', 'HttpDownloadUrl', '"http://115.236.19.147:16280"'
+            buildConfigField 'String', 'HttpUrl', '"http://115.236.19.147:15981"'
+            buildConfigField 'String', 'HttpUrl2', '"http://115.236.19.147:15982"'
+        }
+    }
+    
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.release
+            zipAlignEnabled true
+
+        }
+        release {
+            //是否混淆
+            minifyEnabled true
+            //移除无用的资源文件,这个东西依赖于minifyEnabled，所以minifyEnabled也要为true才行
+            shrinkResources true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            //否zip对齐
+            zipAlignEnabled true
+        }
+    }
+
+
+    /**
+     * 使用gradle构建android的默认project结构
+     * src/main
+     ----java/
+     ----res/
+     ----assets/
+     ----aidl/
+     ----rs/
+     ----jni/
+     ----AndroidManifest.xml
+     */
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+        demo {
+            java.srcDirs = ['src/main/java', 'src/demo/java']
+            assets.srcDirs = ['src/main/assets']
+        }
+        
+
+    }
+
+    dexOptions {
+        javaMaxHeapSize "4g"
+    }
+}
+
+repositories {
+    flatDir {
+        dirs "libs"
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile project(':baselib')
+}
