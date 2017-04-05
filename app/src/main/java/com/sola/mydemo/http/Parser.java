@@ -21,12 +21,13 @@ public class Parser {
     final static String DATA = "body";
     final static String MSG = "msg";
     final static String PRO = "properties";
+    
+    private static final int LIST = 1;
+    private static final int OBJECT = 2;
+    private static final int BASE = 3;
 
     private static Parser mParser;
 
-    public enum TYPE {
-        LIST, OBJECT, BASE
-    }
 
     private Parser() {
 
@@ -41,69 +42,29 @@ public class Parser {
     }
 
 
-    public ResultModel parserData(String json, Class clazz, TYPE type) {
-        if(json != null) {
-            Logger.d(json);
-            Logger.json(json);
-        }else{
-            AppLogger.e(json);
-        }
-        ResultModel mList = new ResultModel();
-        if (null != json) {
-            try {
-
-                JSONObject ob = JSON.parseObject(json);
-                ResultModel fList = null;
-                int code = getCode(ob);
-                fList = doFilter(code, ob);
-                if (null != fList) {
-                    return fList;
-                }
-                if (code == 200) {
-                    mList.statue = Statue.SUCCESS;
-//                    if (ob.containsKey(PRO)) {
-//                        mList.pro = JSON.parseObject(ob.getString(PRO), PropertyVo.class);
-//                    }
-                    if (ob.containsKey(DATA)) {
-
-                        switch (type) {
-                            case LIST:
-                                mList.data = JSON.parseArray(ob.getString(DATA), clazz);
-                                break;
-                            case OBJECT:
-                                mList.data = JSON.parseObject(ob.getString(DATA), clazz);
-                                break;
-                            case BASE:
-                                mList.data = ob.get(DATA);
-                                break;
-                        }
-
-                        return mList;
-                    } else {
-                        mList.message = "数据为空";
-                        return mList;
-                    }
-                } else {
-                    mList.statue = Statue.ERROR;
-                    if (ob.containsKey(MSG)) {
-                        mList.message = ob.getString(MSG);
-                    }
-
-                    
-
-                    return mList;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                mList.statue = Statue.PARSER_ERROR;
-//                mList.data = data;
-                return mList;
-            }
-        }
-        return mList;
+    public ResultModel parserData(String json, Class clazz) {
+        return parserSpData(json, clazz, DATA);
     }
 
-    public ResultModel parserSpData(String json, Class clazz, String dataId, TYPE type) {
+    
+    private int getDataType(String s) {
+        if(s.startsWith("{")){
+            return OBJECT;
+        }
+        if(s.startsWith("[")){
+            return LIST;
+        }
+        return BASE;
+    }
+
+    /**
+     * 
+     * @param json
+     * @param clazz
+     * @param dataId  data节点
+     * @return
+     */
+    public ResultModel parserSpData(String json, Class clazz, String dataId) {
         if(json != null) {
             Logger.d(json);
             Logger.json(json);
@@ -118,7 +79,7 @@ public class Parser {
 
                 mList.statue = Statue.SUCCESS;
                 if (ob.containsKey(dataId)) {
-
+                    int type = getDataType(ob.getString(dataId));
                     switch (type) {
                         case LIST:
                             mList.data = JSON.parseArray(ob.getString(dataId), clazz);

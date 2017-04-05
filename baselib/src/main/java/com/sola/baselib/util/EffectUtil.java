@@ -7,11 +7,14 @@ import android.view.View;
 
 import com.jakewharton.rxbinding2.view.RxView;
 
+import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observable;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Predicate;
 import io.reactivex.observables.ConnectableObservable;
+import retrofit2.http.Part;
 
 /**
  * Created by Administrator on 2016/12/13.
@@ -56,8 +59,11 @@ public class EffectUtil {
         return v;
     }
     
-    public static void addClickEffectRx(final View v){
-        ConnectableObservable<MotionEvent> motionEventObservable = RxView.touches(v).publish();
+    @Deprecated
+    public static void addClickEffectRx(final View v, final Listener listener){
+        ConnectableObservable<MotionEvent> motionEventObservable = RxView.touches(v)
+                .publish();
+        
         // Capture down events
         motionEventObservable
                 .filter(new Predicate<MotionEvent>() {
@@ -71,13 +77,28 @@ public class EffectUtil {
                         ObjectAnimator.ofFloat(v, "alpha",1.0f,0.3f).start();
                     }
                 });
-        // Capture up/cancel events
+        // Capture up events
         motionEventObservable
                 .filter(new Predicate<MotionEvent>() {
                     @Override
                     public boolean test(@NonNull MotionEvent motionEvent) throws Exception {
-                        return motionEvent.getAction() == MotionEvent.ACTION_UP
-                                || motionEvent.getAction() == MotionEvent.ACTION_CANCEL;
+                        return motionEvent.getAction() == MotionEvent.ACTION_UP;
+                    }
+                }).subscribe(new Consumer<MotionEvent>() {
+            @Override
+            public void accept(@NonNull MotionEvent motionEvent) throws Exception {
+                ObjectAnimator.ofFloat(v, "alpha",0.3f,1.0f).start();
+                if(listener != null){
+                    listener.onUpLisener(v);
+                }
+            }
+        });
+        //Capture cancel events
+        motionEventObservable
+                .filter(new Predicate<MotionEvent>() {
+                    @Override
+                    public boolean test(@NonNull MotionEvent motionEvent) throws Exception {
+                        return motionEvent.getAction() == MotionEvent.ACTION_CANCEL;
                     }
                 }).subscribe(new Consumer<MotionEvent>() {
             @Override
@@ -86,5 +107,13 @@ public class EffectUtil {
             }
         });
         motionEventObservable.connect();
+        
+        
+    }
+
+
+
+    public interface Listener{
+        void onUpLisener(View v);
     }
 }

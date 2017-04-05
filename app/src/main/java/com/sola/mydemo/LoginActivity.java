@@ -38,6 +38,7 @@ import com.sola.baselib.util.EffectUtil;
 import com.sola.baselib.util.MD5;
 import com.sola.baselib.util.NetworkUtil;
 import com.sola.baselib.widget.dialog.LoadingDialog;
+import com.sola.mydemo.http.NetClient;
 import com.sola.mydemo.http.Parser;
 import com.sola.mydemo.model.user.LoginUser;
 import com.sola.mydemo.ui.base.BaseActivity;
@@ -61,6 +62,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 import static android.Manifest.permission.READ_CONTACTS;
@@ -156,6 +158,7 @@ public class LoginActivity extends BaseActivity implements LoaderCallbacks<Curso
                 .subscribe(new Consumer<Object>() {
                     @Override
                     public void accept(@io.reactivex.annotations.NonNull Object o) throws Exception {
+//                        login2("13600001111", "123456");
                         login();
                     }
                 });
@@ -171,14 +174,19 @@ public class LoginActivity extends BaseActivity implements LoaderCallbacks<Curso
                     }
                 });
         
-        RxView.clicks(tvEffect).subscribe(new Consumer<Object>() {
+//        RxView.clicks(tvEffect).subscribe(new Consumer<Object>() {
+//            @Override
+//            public void accept(@io.reactivex.annotations.NonNull Object o) throws Exception {
+//                showToast("click effect");
+//            }
+//        });
+        EffectUtil.addClickEffectRx(tvEffect, new EffectUtil.Listener() {
             @Override
-            public void accept(@io.reactivex.annotations.NonNull Object o) throws Exception {
+            public void onUpLisener(View v) {
                 showToast("click effect");
             }
         });
-        EffectUtil.addClickEffect(tvEffect);
-        
+
     }
 
     private void doCount() {
@@ -231,6 +239,35 @@ public class LoginActivity extends BaseActivity implements LoaderCallbacks<Curso
         
         
     }
+    
+    private void login2(String userName, String pwd){
+        ArrayMap<String, Object> body = new ArrayMap<>();
+        body.put("tenantId", "coms.xiangtan");
+        body.put("loginName", userName);
+        body.put("rid", "patient");
+        body.put("pwd", MD5.getMD5(pwd));
+        body.put("forAccessToken", true);
+        String url = "logon/login";
+        
+        NetClient.post(this, url, null, body, LoginUser.class,
+                new NetClient.Listener<ResultModel<LoginUser>>() {
+                    @Override
+                    public void onPrepare() {
+                        showLoadingDialog();
+                    }
+
+                    @Override
+                    public void onSuccess(ResultModel<LoginUser> result) {
+                        dismissLoadingDialog();
+                        showToast(result.data.displayName);
+                    }
+
+                    @Override
+                    public void onFaile(Throwable t) {
+                        dismissLoadingDialog();
+                    }
+                });
+    }
 
     private void login() {
         if(!NetworkUtil.isNetworkAvailable()){
@@ -241,7 +278,7 @@ public class LoginActivity extends BaseActivity implements LoaderCallbacks<Curso
                 .map(new Function<String, ResultModel<LoginUser>>() {
                     @Override
                     public ResultModel<LoginUser> apply(@io.reactivex.annotations.NonNull String s) throws Exception {
-                        return Parser.getInstance().parserData(s, LoginUser.class, Parser.TYPE.OBJECT);
+                        return Parser.getInstance().parserData(s, LoginUser.class);
                     }
                 })
                 .delay(2, TimeUnit.SECONDS)
@@ -294,7 +331,8 @@ public class LoginActivity extends BaseActivity implements LoaderCallbacks<Curso
         body.put("rid", "patient");
         body.put("pwd", MD5.getMD5(pwd));
         body.put("forAccessToken", true);
-        return RetrofitClient.getInstance().post2("logon/login", null, body);
+        String url = "logon/login";
+        return RetrofitClient.getInstance().post2(url, null, body);
     }
 
     private void populateAutoComplete() {
